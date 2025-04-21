@@ -6,6 +6,7 @@ gemspec
 
 group :development do
   gem "irb"
+  gem "rake", "~> 13.2", ">= 13.2.1"
   gem "rspec"
   gem "rubocop"
   gem "rubocop-github"
