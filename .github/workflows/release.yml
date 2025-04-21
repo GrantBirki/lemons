@@ -1,12 +1,14 @@
 name: release
 
 on:
-    workflow_dispatch:
-    push:
-      branches:
-        - main
-      paths:
-        - lib/version.rb
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - lib/version.rb
+
+permissions: {}
 
 jobs:
   build:
@@ -102,7 +104,7 @@ jobs:
       id-token: write
       attestations: write
       contents: read
-    uses: github/salsa/.github/workflows/sign-artifact.yml@main # change to your own org/repo if you forked this repo
+    uses: github/salsa/.github/workflows/sign-artifact.yml@bda9bd5ff55206dfb5b5f53674f8198ad9e98f6b # pin@main
     with:
       artifact-ids: ${{ needs.build.outputs.artifact-id }}
       artifact-path: "artifact/${{ needs.build.outputs.gem_path }}"
@@ -110,9 +112,7 @@ jobs:
   verify:
     permissions: {}
     needs: [build, release, sign]
-    uses: github/salsa/.github/workflows/verify.yml@main # change to your own org/repo if you forked this repo
+    uses: github/salsa/.github/workflows/verify.yml@bda9bd5ff55206dfb5b5f53674f8198ad9e98f6b # pin@main
     with:
       artifact-ids: ${{ needs.build.outputs.artifact-id }}
       artifact-path: "artifact/${{ needs.build.outputs.gem_path }}"
-    #   signing-owner: ${{ inputs.signing_owner }}
-    #   signing-repo: ${{ inputs.signing_repo }}
