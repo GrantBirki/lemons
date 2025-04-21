@@ -153,9 +153,4 @@ jobs:
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.event.repository.name }}
           ARTIFACT_PATH: "artifact/${{ needs.build.outputs.gem_path }}"
-        run: |
-          # Convert OWNER, REPO, and SIGNING_REPO, SIGNING_OWNER to lowercase as expected by the command
-          OWNER=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
-          REPO=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
-
-          gh attestation verify "$ARTIFACT_PATH" --repo ${OWNER}/${REPO} --signer-workflow ${OWNER}/${REPO}/.github/workflows/release.yml
+        run: gh attestation verify "$ARTIFACT_PATH" --repo ${OWNER}/${REPO} --signer-workflow ${OWNER}/${REPO}/.github/workflows/release.yml
