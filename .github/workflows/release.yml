@@ -92,6 +92,9 @@ jobs:
         with:
           bundler-cache: false
 
+      - name: bootstrap
+        run: script/bootstrap
+
       - name: Configure RubyGems Credentials
         uses: rubygems/configure-rubygems-credentials@e3f5097339179e0d4c7321ab44209e7e02446746 # pin@main
 
