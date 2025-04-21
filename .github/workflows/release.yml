@@ -66,18 +66,6 @@ jobs:
         with:
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
 
-      - name: GitHub Release
-        env:
-          GEM_NAME: ${{ needs.build.outputs.gem_name }}
-          GEM_VERSION: ${{ needs.build.outputs.gem_version }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ARTIFACT_PATH: "artifact"
-        run: |
-          gh release create "v${GEM_VERSION}" \
-            "${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem" \
-            --title "v${GEM_VERSION}" \
-            --generate-notes
-
       - name: Publish to GitHub Packages
         env:
           OWNER: ${{ github.repository_owner }}
@@ -86,7 +74,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           ARTIFACT_PATH: "artifact"
         run: |
-          GEM_HOST_API_KEY=${GITHUB_TOKEN} gem push --KEY github --host https://rubygems.pkg.github.com/${OWNER} $ARTIFACT_PATH/${GEM_NAME}-${GEM_VERSION}.gem
+          GEM_HOST_API_KEY=${GITHUB_TOKEN} gem push --key github --host https://rubygems.pkg.github.com/${OWNER} $ARTIFACT_PATH/${GEM_NAME}-${GEM_VERSION}.gem
 
       - uses: ruby/setup-ruby@d8d83c3960843afb664e821fed6be52f37da5267 # pin@v1.231.0
         with:
@@ -111,6 +99,25 @@ jobs:
           GEM_VERSION: ${{ needs.build.outputs.gem_version }}
           ARTIFACT_PATH: "artifact"
         run: gem push ${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem --attestation ${GEM_NAME}-${GEM_VERSION}.sigstore.json
+
+      - name: await gem
+        env:
+          GEM_NAME: ${{ needs.build.outputs.gem_name }}
+          GEM_VERSION: ${{ needs.build.outputs.gem_version }}
+        run: bundle exec rubygems-await "${GEM_NAME}:${GEM_VERSION}" --timeout 30
+
+      - name: GitHub Release
+        env:
+          GEM_NAME: ${{ needs.build.outputs.gem_name }}
+          GEM_VERSION: ${{ needs.build.outputs.gem_version }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ARTIFACT_PATH: "artifact"
+        run: |
+          gh release create "v${GEM_VERSION}" \
+            "${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem" \
+            "${GEM_NAME}-${GEM_VERSION}.sigstore.json" \
+            --title "v${GEM_VERSION}" \
+            --generate-notes
 
   sign:
     needs: [build, release]
