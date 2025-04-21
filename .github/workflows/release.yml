@@ -116,3 +116,4 @@ jobs:
     with:
       artifact-ids: ${{ needs.build.outputs.artifact-id }}
       artifact-path: "artifact/${{ needs.build.outputs.gem_path }}"
+      signing-owner: github # the repo hosting the reusable workflow
