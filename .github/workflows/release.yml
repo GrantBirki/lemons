@@ -1,0 +1,24 @@
+name: release
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - lib/version.rb
+
+permissions: {}
+
+jobs:
+  release:
+    if: github.repository == 'grantbirki/lemons'
+    permissions:
+      contents: write
+      id-token: write
+      packages: write
+      attestations: write
+    uses: github/salsa/.github/workflows/ruby.yml@0383780d93e24dfcb54a1bad3a3c29a1404ef862
+    with:
+      bootstrap_script: script/bootstrap
+      build_script: script/build

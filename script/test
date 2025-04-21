@@ -1,5 +1,8 @@
 #! /usr/bin/env bash
 
+echo "does nothing for now"
+exit 0
+
 set -e
 
 source script/env "$@"

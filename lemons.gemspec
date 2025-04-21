@@ -1,8 +1,10 @@
 # frozen_string_literal: true
 
+require_relative "lib/version"
+
 Gem::Specification.new do |spec|
   spec.name          = "lemons"
-  spec.version       = "0.0.1"
+  spec.version       = Lemons::VERSION
   spec.authors       = ["Grant Birkinbine"]
   spec.license       = "MIT"
 
