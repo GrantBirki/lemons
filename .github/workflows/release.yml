@@ -88,15 +88,26 @@ jobs:
         run: |
           GEM_HOST_API_KEY=${GITHUB_TOKEN} gem push --KEY github --host https://rubygems.pkg.github.com/${OWNER} $ARTIFACT_PATH/${GEM_NAME}-${GEM_VERSION}.gem
 
+      - uses: ruby/setup-ruby@d8d83c3960843afb664e821fed6be52f37da5267 # pin@v1.231.0
+        with:
+          bundler-cache: false
+
       - name: Configure RubyGems Credentials
         uses: rubygems/configure-rubygems-credentials@e3f5097339179e0d4c7321ab44209e7e02446746 # pin@main
+
+      - name: sign ruby gem
+        env:
+          GEM_NAME: ${{ needs.build.outputs.gem_name }}
+          GEM_VERSION: ${{ needs.build.outputs.gem_version }}
+          ARTIFACT_PATH: "artifact"
+        run: bundle exec sigstore-cli sign ${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem --bundle ${GEM_NAME}-${GEM_VERSION}.sigstore.json
 
       - name: Publish to RubyGems
         env:
           GEM_NAME: ${{ needs.build.outputs.gem_name }}
           GEM_VERSION: ${{ needs.build.outputs.gem_version }}
           ARTIFACT_PATH: "artifact"
-        run: gem push ${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem
+        run: gem push ${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem --attestation ${GEM_NAME}-${GEM_VERSION}.sigstore.json
 
   sign:
     needs: [build, release]

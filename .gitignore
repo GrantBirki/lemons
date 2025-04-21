@@ -16,3 +16,4 @@ vendor/gems/
 *.secret
 
 lemons-*.gem
+pkg/

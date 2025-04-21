@@ -11,6 +11,7 @@ group :development do
   gem "rubocop-github"
   gem "rubocop-performance"
   gem "rubocop-rspec"
+  gem "sigstore-cli", "~> 0.2.1"
   gem "simplecov"
   gem "simplecov-erb"
 end
