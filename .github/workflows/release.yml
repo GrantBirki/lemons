@@ -121,20 +121,41 @@ jobs:
 
   sign:
     needs: [build, release]
+    runs-on: ubuntu-latest
     permissions:
       id-token: write
       attestations: write
       contents: read
-    uses: github/salsa/.github/workflows/sign-artifact.yml@bda9bd5ff55206dfb5b5f53674f8198ad9e98f6b # pin@main
-    with:
-      artifact-ids: ${{ needs.build.outputs.artifact-id }}
-      artifact-path: "artifact/${{ needs.build.outputs.gem_path }}"
+
+    steps:
+      - uses: actions/download-artifact@54124fbd881f8ce794405a06896c93c49c17463e
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+
+      - name: attest build provenance
+        uses: actions/attest-build-provenance@2.2.3
+        with:
+          subject-path: "artifact/${{ needs.build.outputs.gem_path }}"
 
   verify:
     permissions: {}
     needs: [build, release, sign]
-    uses: github/salsa/.github/workflows/verify.yml@bda9bd5ff55206dfb5b5f53674f8198ad9e98f6b # pin@main
-    with:
-      artifact-ids: ${{ needs.build.outputs.artifact-id }}
-      artifact-path: "artifact/${{ needs.build.outputs.gem_path }}"
-      signing-owner: github # the repo hosting the reusable workflow
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/download-artifact@54124fbd881f8ce794405a06896c93c49c17463e
+        with:
+          artifact-ids: ${{ needs.build.outputs.artifact-id }}
+
+      - name: verify
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          REPO: ${{ github.event.repository.name }}
+          ARTIFACT_PATH: "artifact/${{ needs.build.outputs.gem_path }}"
+        run: |
+          # Convert OWNER, REPO, and SIGNING_REPO, SIGNING_OWNER to lowercase as expected by the command
+          OWNER=$(echo "$OWNER" | tr '[:upper:]' '[:lower:]')
+          REPO=$(echo "$REPO" | tr '[:upper:]' '[:lower:]')
+
+          gh attestation verify "$ARTIFACT_PATH" --repo ${OWNER}/${REPO} --signer-workflow ${OWNER}/${REPO}/.github/workflows/release.yml
