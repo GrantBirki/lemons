@@ -62,7 +62,7 @@ jobs:
         with:
           persist-credentials: false
 
-      - uses: actions/download-artifact@54124fbd881f8ce794405a06896c93c49c17463e
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
 
@@ -128,7 +128,7 @@ jobs:
       contents: read
 
     steps:
-      - uses: actions/download-artifact@54124fbd881f8ce794405a06896c93c49c17463e
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
 
@@ -143,7 +143,7 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      - uses: actions/download-artifact@54124fbd881f8ce794405a06896c93c49c17463e
+      - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
 
