@@ -64,7 +64,11 @@ jobs:
 
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
+          path: "artifact"
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
+
+      - name: view artifact
+        run: tree -L 2 -a --dirsfirst -C -F -h -D
 
       - name: Publish to GitHub Packages
         env:
@@ -130,6 +134,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
+          path: "artifact"
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
 
       - name: attest build provenance
@@ -145,6 +150,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
+          path: "artifact"
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
 
       - name: verify
