@@ -17,3 +17,5 @@ vendor/gems/
 
 lemons-*.gem
 pkg/
+
+dist/

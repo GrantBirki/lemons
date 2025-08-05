@@ -21,6 +21,7 @@ jobs:
       gem_name: ${{ steps.build.outputs.gem_name }}
       gem_version: ${{ steps.build.outputs.gem_version }}
       gem_path: ${{ steps.build.outputs.gem_path }}
+      artifact_dir: ${{ steps.build.outputs.artifact_dir }}
 
     steps:
       - name: checkout
@@ -39,6 +40,7 @@ jobs:
       # gem_name: the name of the gem - ex: "my-cool-gem"
       # gem_version: the version of the gem - ex: "1.0.0"
       # gem_path: the path/filename of the gem - ex: "my-cool-gem-1.0.0.gem"
+      # artifact_dir: the directory where the gem is stored - ex: "dist" (a directory)
       - name: build
         id: build
         run: script/build
@@ -47,7 +49,9 @@ jobs:
         uses: actions/upload-artifact@4.6.2
         id: upload-artifact
         with:
-          path: "${{ steps.build.outputs.gem_path }}"
+          name: ${{ steps.build.outputs.artifact_dir }}
+          path: ${{ steps.build.outputs.artifact_dir }}
+          if-no-files-found: error
 
   release:
     needs: build
@@ -64,11 +68,13 @@ jobs:
 
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
-          path: "artifact"
+          path: ${{ needs.build.outputs.artifact_dir }}
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
 
       - name: view artifact
-        run: tree -L 2 -a --dirsfirst -C -F -h -D
+        env:
+          ARTIFACT_PATH: ${{ needs.build.outputs.artifact_dir }}
+        run: tree -L 2 -a --dirsfirst -C -F -h -D "${ARTIFACT_PATH}"
 
       - name: Publish to GitHub Packages
         env:
@@ -76,9 +82,9 @@ jobs:
           GEM_NAME: ${{ needs.build.outputs.gem_name }}
           GEM_VERSION: ${{ needs.build.outputs.gem_version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ARTIFACT_PATH: "artifact"
+          ARTIFACT_PATH: ${{ needs.build.outputs.artifact_dir }}
         run: |
-          GEM_HOST_API_KEY=${GITHUB_TOKEN} gem push --key github --host https://rubygems.pkg.github.com/${OWNER} $ARTIFACT_PATH/${GEM_NAME}-${GEM_VERSION}.gem
+          GEM_HOST_API_KEY=${GITHUB_TOKEN} gem push --key github --host https://rubygems.pkg.github.com/${OWNER} ${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem
 
       - uses: ruby/setup-ruby@d8d83c3960843afb664e821fed6be52f37da5267 # pin@v1.231.0
         with:
@@ -94,14 +100,14 @@ jobs:
         env:
           GEM_NAME: ${{ needs.build.outputs.gem_name }}
           GEM_VERSION: ${{ needs.build.outputs.gem_version }}
-          ARTIFACT_PATH: "artifact"
+          ARTIFACT_PATH: ${{ needs.build.outputs.artifact_dir }}
         run: bundle exec sigstore-cli sign ${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem --bundle ${GEM_NAME}-${GEM_VERSION}.sigstore.json
 
       - name: Publish to RubyGems
         env:
           GEM_NAME: ${{ needs.build.outputs.gem_name }}
           GEM_VERSION: ${{ needs.build.outputs.gem_version }}
-          ARTIFACT_PATH: "artifact"
+          ARTIFACT_PATH: ${{ needs.build.outputs.artifact_dir }}
         run: gem push ${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem --attestation ${GEM_NAME}-${GEM_VERSION}.sigstore.json
 
       - name: await gem
@@ -115,7 +121,7 @@ jobs:
           GEM_NAME: ${{ needs.build.outputs.gem_name }}
           GEM_VERSION: ${{ needs.build.outputs.gem_version }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          ARTIFACT_PATH: "artifact"
+          ARTIFACT_PATH: ${{ needs.build.outputs.artifact_dir }}
         run: |
           gh release create "v${GEM_VERSION}" \
             "${ARTIFACT_PATH}/${GEM_NAME}-${GEM_VERSION}.gem" \
@@ -134,13 +140,13 @@ jobs:
     steps:
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
-          path: "artifact"
+          path: ${{ needs.build.outputs.artifact_dir }}
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
 
       - name: attest build provenance
         uses: actions/attest-build-provenance@2.2.3
         with:
-          subject-path: "artifact/${{ needs.build.outputs.gem_path }}"
+          subject-path: "${{ needs.build.outputs.artifact_dir }}/${{ needs.build.outputs.gem_path }}"
 
   verify:
     permissions: {}
@@ -150,7 +156,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@634f93cb2916e3fdff6788551b99b062d0335ce0
         with:
-          path: "artifact"
+          path: ${{ needs.build.outputs.artifact_dir }}
           artifact-ids: ${{ needs.build.outputs.artifact-id }}
 
       - name: verify
@@ -158,5 +164,5 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ github.repository_owner }}
           REPO: ${{ github.event.repository.name }}
-          ARTIFACT_PATH: "artifact/${{ needs.build.outputs.gem_path }}"
+          ARTIFACT_PATH: "${{ needs.build.outputs.artifact_dir }}/${{ needs.build.outputs.gem_path }}"
         run: gh attestation verify "$ARTIFACT_PATH" --repo ${OWNER}/${REPO} --signer-workflow ${OWNER}/${REPO}/.github/workflows/release.yml
